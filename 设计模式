@@ -1,0 +1,2455 @@
+
+===============================================================================迭代模式==============================================================================================================
+
+描述迭代子（Iterator）模式的：
+迭代子模式又叫游标(Cursor)模式，是对象的行为模式。迭代子模式可以顺序地访问一个聚集中的元素而不必暴露聚集的内部表象（internal representation）。
+
+
+　抽象聚集角色类，这个角色规定出所有的具体聚集必须实现的接口。迭代子模式要求聚集对象必须有一个工厂方法，也就是createIterator()方法，以向外界提供迭代子对象的实例。
+
+迭代子模式涉及到以下几个角色：
+　　●　　抽象迭代子(Iterator)角色：此抽象角色定义出遍历元素所需的接口。
+　　●　　具体迭代子(ConcreteIterator)角色：此角色实现了Iterator接口，并保持迭代过程中的游标位置。
+　　●　　聚集(Aggregate)角色：此抽象角色给出创建迭代子(Iterator)对象的接口。
+　　●　　具体聚集(ConcreteAggregate)角色：实现了创建迭代子(Iterator)对象的接口，返回一个合适的具体迭代子实例。
+　　●　　客户端(Client)角色：持有对聚集及其迭代子对象的引用，调用迭代子对象的迭代接口，也有可能通过迭代子操作聚集元素的增加和删除。
+
+public abstract class Aggregate {
+    /**
+     * 工厂方法，创建相应迭代子对象的接口
+     */
+    public abstract Iterator createIterator();
+}
+
+
+public class ConcreteAggregate extends Aggregate {
+    
+    private Object[] objArray = null;
+    /**
+     * 构造方法，传入聚合对象的具体内容
+     */
+    public ConcreteAggregate(Object[] objArray){
+        this.objArray = objArray;
+    }
+    
+    @Override
+    public Iterator createIterator() {
+        
+        return new ConcreteIterator(this);
+    }
+    /**
+     * 取值方法：向外界提供聚集元素
+     */
+    public Object getElement(int index){
+        
+        if(index < objArray.length){
+            return objArray[index];
+        }else{
+            return null;
+        }
+    }
+    /**
+     * 取值方法：向外界提供聚集的大小
+     */
+    public int size(){
+        return objArray.length;
+    }
+}
+
+
+public interface Iterator {
+    /**
+     * 迭代方法：移动到第一个元素
+     */
+    public void first();
+    /**
+     * 迭代方法：移动到下一个元素
+     */
+    public void next();
+    /**
+     * 迭代方法：是否为最后一个元素
+     */
+    public boolean isDone();
+    /**
+     * 迭代方法：返还当前元素
+     */
+    public Object currentItem();
+}
+
+
+public class ConcreteIterator implements Iterator {
+    //持有被迭代的具体的聚合对象
+    private ConcreteAggregate agg;
+    //内部索引，记录当前迭代到的索引位置
+    private int index = 0;
+    //记录当前聚集对象的大小
+    private int size = 0;
+    
+    public ConcreteIterator(ConcreteAggregate agg){
+        this.agg = agg;
+        this.size = agg.size();
+        index = 0;
+    }
+    /**
+     * 迭代方法：返还当前元素
+     */
+    @Override
+    public Object currentItem() {
+        return agg.getElement(index);
+    }
+    /**
+     * 迭代方法：移动到第一个元素
+     */
+    @Override
+    public void first() {
+        
+        index = 0;
+    }
+    /**
+     * 迭代方法：是否为最后一个元素
+     */
+    @Override
+    public boolean isDone() {
+        return (index >= size);
+    }
+    /**
+     * 迭代方法：移动到下一个元素
+     */
+    @Override
+    public void next() {
+
+        if(index < size)
+        {
+            index ++;
+        }
+    }
+
+}
+
+
+
+
+public class Client {
+
+    public void operation(){
+        Object[] objArray = {"One","Two","Three","Four","Five","Six"};
+        //创建聚合对象
+        Aggregate agg = new ConcreteAggregate(objArray);
+        //循环输出聚合对象中的值
+        Iterator it = agg.createIterator();
+        while(!it.isDone()){
+            System.out.println(it.currentItem());
+            it.next();
+        }
+    }
+    public static void main(String[] args) {
+        
+        Client client = new Client();
+        client.operation();
+    }
+
+}
+
+
+===============================================================================工厂方法模式==============================================================================================================
+
+
+工厂方法模式：也叫工厂模式，属于类创建型模式，工厂父类（接口）负责定义产品对象的公共接口，而子类工厂则负责创建具体的产品对象。
+
+目的：是为了把产品的实例化操作延迟到子类工厂中完成，通过工厂子类来决定究竟应该实例化哪一个产品具体对象。
+
+工厂方法模式包含四个部分：
+
+1.抽象产品：产品对象同一的基类，或者是同一的接口。
+
+2.具体的产品：各个不同的实例对象类
+
+3.抽象工厂：所有的子类工厂类的基类，或是同一的接口
+
+4.具体的工厂子类：负责每个不同的产品对象的实际创建
+
+
+1.抽象的产品类：定义car  交通工具类下：
+package factory.simple;
+
+/**
+ * 抽象产品角色 交通工具接口
+ * 
+ * @author lilin
+ * 
+ */
+public interface Car {
+
+    /**
+     * 上班函数
+     */
+    void gotowork();
+
+}
+
+2.定义实际的产品类，总共定义两个，bike 和bus 分别表示不同的交通工具类
+
+package factory.simple;
+
+/**
+ * 具体产品角色，自行车
+ * 
+ * @author lilin
+ * 
+ */
+public class Bike implements Car {
+    @Override
+    public void gotowork() {
+        System.out.println("骑自行车去上班！");
+    }
+
+}
+
+package factory.simple;
+
+/**
+ * @author lilin
+ * 
+ */
+public class Bus implements Car {
+
+    @Override
+    public void gotowork() {
+        System.out.println("坐公交车去上班！");
+    }
+
+}
+
+
+3.抽象的工厂接口定义如下：、
+
+
+/**
+ * 
+ */
+package factory.factory;
+
+import factory.simple.Car;
+
+/**
+ * @author lilin
+ * 
+ */
+public interface ICarFactory {
+
+    /**
+     * 获取交通工具
+     * 
+     * @return
+     */
+    Car getCar();
+
+}
+
+
+4.具体的工厂子类，分别为每个具体的产品类创建不同的工厂子类：
+
+
+/**
+ * 
+ */
+package factory.factory;
+
+import factory.simple.Bike;
+import factory.simple.Car;
+
+/**
+ * @author lilin
+ * 
+ */
+public class BikeFactory implements ICarFactory {
+
+    @Override
+    public Car getCar() {
+        return new Bike();
+    }
+
+}
+
+
+/**
+ * 
+ */
+package factory.factory;
+
+import factory.simple.Bus;
+import factory.simple.Car;
+
+/**
+ * @author lilin
+ * 
+ */
+public class BusFactory implements ICarFactory {
+
+    @Override
+    public Car getCar() {
+        return new Bus();
+    }
+
+}
+
+
+
+
+/**
+ * 
+ */
+package factory.factory;
+
+import org.testng.annotations.Test;
+
+import factory.simple.Car;
+
+/**
+ * @author lilin
+ * 
+ */
+public class TestFactory {
+
+    @Test
+    public void test() {
+        ICarFactory factory = null;
+        // bike
+        factory = new BikeFactory();
+        Car bike = factory.getCar();
+        bike.gotowork();
+
+        // bus
+        factory = new BusFactory();
+        Car bus = factory.getCar();
+        bus.gotowork();
+    }
+
+}
+
+
+
+===============================================================================备忘录模式==============================================================================================================
+
+备忘录模式：又叫做快照模式，指在不破坏封装性的前提下，获取到一个对象的内部状态，并在对象之外记录或保存这个状态。在有需要的时候可将该对象恢复到原先保存的状态。我们相当于把对象原始状备份保留，所以叫备忘录模式。 
+*模式 角色对象组成： 
+1.发起者对象：负责创建一个备忘录来记录当前对象的内部状态，并可使用备忘录恢复内部状态。 
+2.备忘录对象：负责存储发起者对象的内部状态，并防止其他对象访问备忘录。 
+3.管理者对象:负责备忘录权限管理，不能对备忘录对象的内容进行访问或者操作。 
+优点： 
+1、备忘录模式可以把发起人内部信息对象屏蔽起来，从而可以保持封装的边界。 
+2、简化了发起人类。当发起人角色的状态改变的时候，有可能这个状态无效，这时候就可以使用暂时存储起来的备忘录将状态复原。
+缺点： 
+1、如果状态需要完整地存储到备忘录对象中，那么在资源消耗上面备忘录对象比较昂贵。 
+2、当发起者对象的状态改变的时候，有可能这个协议无效。如果状态改变的成功率达不到要求，可以考虑采取“假如”协议模式
+
+
+
+/**
+ * 备忘录对象类
+ * @description：
+ * @date 2016-1-22 上午11:15:59
+ */
+public class MemoBean {
+    private int useTime;//使用时间
+    private String deviceName;//设备名称
+    private int stateLevel;//状态
+    public int getUseTime() {
+        return useTime;
+    }
+    public void setUseTime(int useTime) {
+        this.useTime = useTime;
+    }
+    public String getDeviceName() {
+        return deviceName;
+    }
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+    public int getStateLevel() {
+        return stateLevel;
+    }
+    public void setStateLevel(int stateLevel) {
+        this.stateLevel = stateLevel;
+    }
+
+}
+
+
+/**
+ * 备忘录管理对象
+ * @description：
+ * @date 2016-1-22 上午11:15:25
+ */
+public class MemoManager {
+    MemoBean memento;
+
+    public MemoBean getMemento() {
+        return memento;
+    }
+
+    public void setMemento(MemoBean memento) {
+        this.memento = memento;
+    }
+}
+
+
+/**
+ * 发起者对象
+ * @description：
+ * @date 2016-1-22 上午11:21:18
+ */
+public class MemoRole {
+    private int useTime;// 使用时间
+    private String deviceName;// 设备名称
+    private int stateLevel;// 状态
+
+    public MemoRole(String deviceName, int useTime, int stateLevel) {
+        super();
+        this.useTime = useTime;
+        this.deviceName = deviceName;
+        this.stateLevel = stateLevel;
+    }
+
+    public MemoRole() {
+    }
+
+    public int getUseTime() {
+        return useTime;
+    }
+
+    public void setUseTime(int useTime) {
+        this.useTime = useTime;
+    }
+
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
+    public int getStateLevel() {
+        return stateLevel;
+    }
+
+    public void setStateLevel(int stateLevel) {
+        this.stateLevel = stateLevel;
+    }
+
+    public MemoBean createMemoObject() {
+        MemoBean memento = new MemoBean();
+        memento.setDeviceName(deviceName);
+        memento.setStateLevel(stateLevel);
+        memento.setUseTime(useTime);
+        return memento;
+    }
+
+    public void setMemento(MemoBean memento) {
+        this.deviceName = memento.getDeviceName();
+        this.stateLevel = memento.getStateLevel();
+        this.useTime = memento.getUseTime();
+    }
+
+    /**
+     * 获取对象当前状态
+     * @description：
+     * @author ldm
+     * @date 2016-1-22 下午12:15:09
+     */
+    public void getCurrentState() {
+        System.out.println("当前设备名称：" + this.deviceName + "当前使用时间：" + this.useTime + "当前工作状态：" + this.stateLevel);
+    }
+}
+
+
+
+public class Test {
+
+    public static void main(String[] args) {
+        // 新建备忘录发起者对象
+        MemoRole role = new MemoRole("发电机", 0, 1);
+        // 新建备忘录管理者
+        MemoManager manager = new MemoManager();
+        // 角色初始状态
+        System.out.println("机器开始发电:");
+        role.getCurrentState();
+        // 利用备忘录模式保存当前状态
+        System.out.println("---保存当前的机器状态---");
+        manager.setMemento(role.createMemoObject());
+        role.setDeviceName("发电机");
+        role.setStateLevel(5);
+        role.setUseTime(1000);
+        System.out.println("已经持续发电1000小时");
+        role.getCurrentState();
+        // 恢复保存的角色状态
+        role.setMemento(manager.getMemento());
+        System.out.println("恢复后发电机当前状态：");
+        role.getCurrentState();
+    }
+
+}
+
+
+
+===============================================================================备忘录模式==============================================================================================================
+
+备忘录模式：又叫做快照模式，指在不破坏封装性的前提下，获取到一个对象的内部状态，并在对象之外记录或保存这个状态。在有需要的时候可将该对象恢复到原先保存的状态。我们相当于把对象原始状备份保留，所以叫备忘录模式。 
+*模式 角色对象组成： 
+1.发起者对象：负责创建一个备忘录来记录当前对象的内部状态，并可使用备忘录恢复内部状态。 
+2.备忘录对象：负责存储发起者对象的内部状态，并防止其他对象访问备忘录。 
+3.管理者对象:负责备忘录权限管理，不能对备忘录对象的内容进行访问或者操作。 
+优点： 
+1、备忘录模式可以把发起人内部信息对象屏蔽起来，从而可以保持封装的边界。 
+2、简化了发起人类。当发起人角色的状态改变的时候，有可能这个状态无效，这时候就可以使用暂时存储起来的备忘录将状态复原。
+缺点： 
+1、如果状态需要完整地存储到备忘录对象中，那么在资源消耗上面备忘录对象比较昂贵。 
+2、当发起者对象的状态改变的时候，有可能这个协议无效。如果状态改变的成功率达不到要求，可以考虑采取“假如”协议模式
+
+
+
+/**
+ * 备忘录对象类
+ * @description：
+ * @date 2016-1-22 上午11:15:59
+ */
+public class MemoBean {
+    private int useTime;//使用时间
+    private String deviceName;//设备名称
+    private int stateLevel;//状态
+    public int getUseTime() {
+        return useTime;
+    }
+    public void setUseTime(int useTime) {
+        this.useTime = useTime;
+    }
+    public String getDeviceName() {
+        return deviceName;
+    }
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+    public int getStateLevel() {
+        return stateLevel;
+    }
+    public void setStateLevel(int stateLevel) {
+        this.stateLevel = stateLevel;
+    }
+
+}
+
+
+/**
+ * 备忘录管理对象
+ * @description：
+ * @date 2016-1-22 上午11:15:25
+ */
+public class MemoManager {
+    MemoBean memento;
+
+    public MemoBean getMemento() {
+        return memento;
+    }
+
+    public void setMemento(MemoBean memento) {
+        this.memento = memento;
+    }
+}
+
+
+/**
+ * 发起者对象
+ * @description：
+ * @date 2016-1-22 上午11:21:18
+ */
+public class MemoRole {
+    private int useTime;// 使用时间
+    private String deviceName;// 设备名称
+    private int stateLevel;// 状态
+
+    public MemoRole(String deviceName, int useTime, int stateLevel) {
+        super();
+        this.useTime = useTime;
+        this.deviceName = deviceName;
+        this.stateLevel = stateLevel;
+    }
+
+    public MemoRole() {
+    }
+
+    public int getUseTime() {
+        return useTime;
+    }
+
+    public void setUseTime(int useTime) {
+        this.useTime = useTime;
+    }
+
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
+    public int getStateLevel() {
+        return stateLevel;
+    }
+
+    public void setStateLevel(int stateLevel) {
+        this.stateLevel = stateLevel;
+    }
+
+    public MemoBean createMemoObject() {
+        MemoBean memento = new MemoBean();
+        memento.setDeviceName(deviceName);
+        memento.setStateLevel(stateLevel);
+        memento.setUseTime(useTime);
+        return memento;
+    }
+
+    public void setMemento(MemoBean memento) {
+        this.deviceName = memento.getDeviceName();
+        this.stateLevel = memento.getStateLevel();
+        this.useTime = memento.getUseTime();
+    }
+
+    /**
+     * 获取对象当前状态
+     * @description：
+     * @author ldm
+     * @date 2016-1-22 下午12:15:09
+     */
+    public void getCurrentState() {
+        System.out.println("当前设备名称：" + this.deviceName + "当前使用时间：" + this.useTime + "当前工作状态：" + this.stateLevel);
+    }
+}
+
+
+
+public class Test {
+
+    public static void main(String[] args) {
+        // 新建备忘录发起者对象
+        MemoRole role = new MemoRole("发电机", 0, 1);
+        // 新建备忘录管理者
+        MemoManager manager = new MemoManager();
+        // 角色初始状态
+        System.out.println("机器开始发电:");
+        role.getCurrentState();
+        // 利用备忘录模式保存当前状态
+        System.out.println("---保存当前的机器状态---");
+        manager.setMemento(role.createMemoObject());
+        role.setDeviceName("发电机");
+        role.setStateLevel(5);
+        role.setUseTime(1000);
+        System.out.println("已经持续发电1000小时");
+        role.getCurrentState();
+        // 恢复保存的角色状态
+        role.setMemento(manager.getMemento());
+        System.out.println("恢复后发电机当前状态：");
+        role.getCurrentState();
+    }
+
+}
+
+
+
+===============================================================================策略模式=============================================================================================================
+
+
+《JAVA与模式》一书中开头是这样描述策略（Strategy）模式的：
+策略模式属于对象的行为模式。其用意是针对一组算法，将每一个算法封装到具有共同接口的独立的类中，从而使得它们可以相互替换。策略模式使得算法可以在不影响到客户端的情况下发生变化。
+
+策略模式把一个系列的算法封装到一个系列的具体策略类里面，作为一个抽象策略类的子类或策略接口的实现类。简单地说：准备一组算法，并将每一个算法封装起来，使它们可以互换。
+
+
+环境(Context)角色：持有一个Strategy抽象策略类或策略接口的引用。
+
+　　抽象策略(Strategy)角色：这是一个抽象角色，由一个接口或抽象类实现。此角色声明所有的具体策略类需要重写的方法。
+
+　　具体策略(Concrete Strategy)角色：封装了相关的算法或行为。
+
+　　示意性实例：
+
+　　环境角色
+public class Context {
+    // 持有一个具体策略的对象
+    private Strategy strategy;
+    /**
+     * 构造函数，传入一个具体策略对象
+     * @param strategy    具体策略对象
+     */
+    public Context(Strategy strategy){
+        this.strategy = strategy;
+    }
+    /**
+     * 策略方法
+     */
+    public void contextInterface(){
+        
+        strategy.strategyInterface();
+    }
+    
+}
+
+　抽象策略角色
+public interface Strategy {
+    /**
+     * 策略方法
+     */
+    public void strategyInterface();
+}
+
+　具体策略角色
+public class ConcreteStrategyA implements Strategy {
+
+    @Override
+    public void strategyInterface() {
+        // 相关的业务
+    }
+
+}
+
+
+public class ConcreteStrategyB implements Strategy {
+
+    @Override
+    public void strategyInterface() {
+        // 相关的业务
+    }
+
+}
+
+
+
+使用场景实例：
+
+　　假设某个网站销售各种书籍，对初级会员没有提供折扣，对中级会员提供每本10%的促销折扣，对高级会员提供每本20%的促销折扣。
+
+　　折扣是根据以下的3个算法中的1个进行的：
+
+　　算法1：对初级会员没有提供折扣。
+
+　　算法2：对中级会员提供10%的促销折扣。
+
+　　算法3：对高级会员提供20%的促销折扣。
+
+
+
+折扣接口
+public interface MemberStrategy {
+    /**
+     * 计算图书的价格
+     * @param booksPrice    图书的原价
+     * @return    计算出打折后的价格
+     */
+    public double calcPrice(double booksPrice);
+}
+
+初级会员折扣实现类
+public class PrimaryMemberStrategy implements MemberStrategy {
+
+    @Override
+    public double calcPrice(double booksPrice) {
+        
+        System.out.println("对于初级会员的没有折扣");
+        return booksPrice;
+    }
+
+}
+
+
+中级会员折扣实现类
+public class IntermediateMemberStrategy implements MemberStrategy {
+
+    @Override
+    public double calcPrice(double booksPrice) {
+
+        System.out.println("对于中级会员的折扣为10%");
+        return booksPrice * 0.9;
+    }
+
+}
+高级会员折扣实现类
+public class AdvancedMemberStrategy implements MemberStrategy {
+
+    @Override
+    public double calcPrice(double booksPrice) {
+        
+        System.out.println("对于高级会员的折扣为20%");
+        return booksPrice * 0.8;
+    }
+}
+
+　价格类
+public class Price {
+    // 持有一个具体的策略对象
+    private MemberStrategy strategy;
+    /**
+     * 构造函数，传入一个具体的策略对象
+     * @param strategy    具体的策略对象
+     */
+    public Price(MemberStrategy strategy){
+        this.strategy = strategy;
+    }
+    
+    /**
+     * 计算图书的价格
+     * @param booksPrice    图书的原价
+     * @return    计算出打折后的价格
+     */
+    public double quote(double booksPrice){
+        return this.strategy.calcPrice(booksPrice);
+    }
+}
+
+　客户端
+public class Client {
+
+    public static void main(String[] args) {
+        // 选择并创建需要使用的策略对象
+        MemberStrategy strategy = new AdvancedMemberStrategy();
+        // 创建环境
+        Price price = new Price(strategy);
+        // 计算价格
+        double quote = price.quote(300);
+        System.out.println("图书的最终价格为：" + quote);
+    }
+
+}
+
+
+===============================================================================代理模式=============================================================================================================
+
+代理模式是对象的结构模式。代理模式给某一个对象提供一个代理对象，并由代理对象控制对原对象的引用。
+
+ 　代理模式的结构：
+   代理对象在客户端和目标对象之间起到中介的作用。
+  代理模式中的角色：
+　　抽象对象角色：声明了目标对象和代理对象的共同接口，在使用目标对象的地方都可以使用代理对象。
+　　目标对象角色：定义了代理对象代表的目标对象。
+　　代理对象角色：代理对象内部有目标对象的引用，可以操作目标对象。
+
+　抽象对象角色：
+  public abstract class AbstractObject {
+     //操作
+    public abstract void operation();
+ }
+
+ 目标对象角色：
+ public class RealObject extends AbstractObject {
+    @Override
+    public void operation() {
+        //一些操作
+        System.out.println("一些操作");
+    }
+}
+
+
+　代理对象角色：
+public class ProxyObject extends AbstractObject{
+    RealObject realObject = new RealObject();
+    @Override
+    public void operation() {
+        //调用目标对象之前可以做相关操作
+        System.out.println("before");        
+        realObject.operation();        
+        //调用目标对象之后可以做相关操作
+        System.out.println("after");
+    }
+}
+
+客户端：
+public class Client {
+
+    public static void main(String[] args) {
+        // TODO Auto-generated method stub
+        AbstractObject obj = new ProxyObject();
+        obj.operation();
+    }
+
+}
+
+
+
+
+===============================================================================建造者模式=============================================================================================================
+
+建造者模式能够将一个复杂的构建与其表示相分离，使得同样的构建过程可以创建不同的表示。这句话理解起来可能有点抽象，简单来说就是调用相同的创建对象的方法（建造过程）可以创建出不同的对象。 
+public class Human {
+	private String head;
+	private String body;
+	private String hand;
+	private String foot;
+	public String getHead() {
+		return head;
+	}
+	public void setHead(String head) {
+		this.head = head;
+	}
+	public String getBody() {
+		return body;
+	}
+	public void setBody(String body) {
+		this.body = body;
+	}
+	public String getHand() {
+		return hand;
+	}
+	public void setHand(String hand) {
+		this.hand = hand;
+	}
+	public String getFoot() {
+		return foot;
+	}
+	public void setFoot(String foot) {
+		this.foot = foot;
+	}
+}
+
+
+public interface IBuildHuman {
+	public void buildHead();
+	public void buildBody();
+	public void buildHand();
+	public void buildFoot();
+	public Human createHuman();
+}
+
+
+
+public class SmartManBuilder implements IBuildHuman {
+	
+	Human human;
+	
+	public SmartManBuilder(){
+		human = new Human();
+	}
+ 
+	@Override
+	public void buildHead() {
+		human.setHead("智商180的头脑");		
+	}
+ 
+	@Override
+	public void buildBody() {
+		human.setBody("新的身体");
+		
+	}
+ 
+	@Override
+	public void buildHand() {
+		human.setHand("新的手");		
+	}
+ 
+	@Override
+	public void buildFoot() {
+		human.setFoot("新的脚");
+		
+	}
+ 
+	@Override
+	public Human createHuman() {
+		return human;
+	}
+    
+}
+
+public class Director {
+	public Human createHumanByDirecotr(IBuildHuman bh){
+		bh.buildBody();
+		bh.buildFoot();
+		bh.buildHand();
+		bh.buildHead();
+		return bh.createHuman();
+	}
+}
+
+
+
+
+public class BuilderTest {
+	public static void main(String[] args){
+		Director director = new Director();
+		Human human = director.createHumanByDirecotr(new SmartManBuilder());
+		System.out.println(human.getHead());
+		System.out.println(human.getBody());
+		System.out.println(human.getHand());
+		System.out.println(human.getFoot());
+	} 
+	
+}
+
+
+
+===============================================================================解释器模式=============================================================================================================
+
+阎宏博士的《JAVA与模式》一书中开头是这样描述解释器（Interpreter）模式的：
+　　解释器模式是类的行为模式。给定一个语言之后，解释器模式可以定义出其文法的一种表示，并同时提供一个解释器。客户端可以使用这个解释器来解释这个语言中的句子。
+解释器模式的结构
+　　下面就以一个示意性的系统为例，讨论解释器模式的结构。系统的结构图如下所示：
+
+　　模式所涉及的角色如下所示：
+　　（1）抽象表达式(Expression)角色：声明一个所有的具体表达式角色都需要实现的抽象接口。这个接口主要是一个interpret()方法，称做解释操作。
+　　（2）终结符表达式(Terminal Expression)角色：实现了抽象表达式角色所要求的接口，主要是一个interpret()方法；文法中的每一个终结符都有一个具体终结表达式与之相对应。比如有一个简单的公式R=R1+R2，在里面R1和R2就是终结符，对应的解析R1和R2的解释器就是终结符表达式。 
+　　（3）非终结符表达式(Nonterminal Expression)角色：文法中的每一条规则都需要一个具体的非终结符表达式，非终结符表达式一般是文法中的运算符或者其他关键字，比如公式R=R1+R2中，“+"就是非终结符，解析“+”的解释器就是一个非终结符表达式。
+　　（4）环境(Context)角色：这个角色的任务一般是用来存放文法中各个终结符所对应的具体值，比如R=R1+R2，我们给R1赋值100，给R2赋值200。这些信息需要存放到环境角色中，很多情况下我们使用Map来充当环境角色就足够了。
+ 
+　　为了说明解释器模式的实现办法，这里给出一个最简单的文法和对应的解释器模式的实现，这就是模拟Java语言中对布尔表达式进行操作和求值。
+　　在这个语言中终结符是布尔变量，也就是常量true和false。非终结符表达式包含运算符and，or和not等布尔表达式。这个简单的文法如下：
+　　　　Expression  ::= Constant | Variable | Or | And | Not
+　　　　And 　　　　::= Expression 'AND' Expression
+　　　　Or　　　　　::= Expression 'OR' Expression
+　　　　Not　　　　 ::= 'NOT' Expression
+　　　　Variable　　::= 任何标识符
+　　　　Constant    ::= 'true' | 'false'
+　　解释器模式的结构图如下所示：
+　　
+　　源代码
+　　抽象表达式角色
+
+public abstract class Expression {
+    /**
+     * 以环境为准，本方法解释给定的任何一个表达式
+     */
+    public abstract boolean interpret(Context ctx);
+    /**
+     * 检验两个表达式在结构上是否相同
+     */
+    public abstract boolean equals(Object obj);
+    /**
+     * 返回表达式的hash code
+     */
+    public abstract int hashCode();
+    /**
+     * 将表达式转换成字符串
+     */
+    public abstract String toString();
+}
+
+　　一个Constant对象代表一个布尔常量
+
+public class Constant extends Expression{
+    
+    private boolean value;
+
+    public Constant(boolean value){
+        this.value = value;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        
+        if(obj != null && obj instanceof Constant){
+            return this.value == ((Constant)obj).value;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.toString().hashCode();
+    }
+
+    @Override
+    public boolean interpret(Context ctx) {
+        
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return new Boolean(value).toString();
+    }
+    
+}
+
+　　一个Variable对象代表一个有名变量
+
+public class Variable extends Expression {
+
+    private String name;
+
+    public Variable(String name){
+        this.name = name;
+    }
+    @Override
+    public boolean equals(Object obj) {
+        
+        if(obj != null && obj instanceof Variable)
+        {
+            return this.name.equals(
+                    ((Variable)obj).name);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.toString().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    @Override
+    public boolean interpret(Context ctx) {
+        return ctx.lookup(this);
+    }
+
+}
+
+　　代表逻辑“与”操作的And类，表示由两个布尔表达式通过逻辑“与”操作给出一个新的布尔表达式的操作
+
+public class And extends Expression {
+
+    private Expression left,right;
+    
+    public And(Expression left , Expression right){
+        this.left = left;
+        this.right = right;
+    }
+    @Override
+    public boolean equals(Object obj) {
+        if(obj != null && obj instanceof And)
+        {
+            return left.equals(((And)obj).left) &&
+                right.equals(((And)obj).right);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.toString().hashCode();
+    }
+
+    @Override
+    public boolean interpret(Context ctx) {
+        
+        return left.interpret(ctx) && right.interpret(ctx);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + left.toString() + " AND " + right.toString() + ")";
+    }
+
+}
+
+　　代表逻辑“或”操作的Or类，代表由两个布尔表达式通过逻辑“或”操作给出一个新的布尔表达式的操作
+
+public class Or extends Expression {
+    private Expression left,right;
+
+    public Or(Expression left , Expression right){
+        this.left = left;
+        this.right = right;
+    }
+    @Override
+    public boolean equals(Object obj) {
+        if(obj != null && obj instanceof Or)
+        {
+            return this.left.equals(((Or)obj).left) && this.right.equals(((Or)obj).right);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.toString().hashCode();
+    }
+
+    @Override
+    public boolean interpret(Context ctx) {
+        return left.interpret(ctx) || right.interpret(ctx);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + left.toString() + " OR " + right.toString() + ")";
+    }
+
+}
+
+　　代表逻辑“非”操作的Not类，代表由一个布尔表达式通过逻辑“非”操作给出一个新的布尔表达式的操作
+
+public class Not extends Expression {
+
+    private Expression exp;
+    
+    public Not(Expression exp){
+        this.exp = exp;
+    }
+    @Override
+    public boolean equals(Object obj) {
+        if(obj != null && obj instanceof Not)
+        {
+            return exp.equals(
+                    ((Not)obj).exp);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.toString().hashCode();
+    }
+
+    @Override
+    public boolean interpret(Context ctx) {
+        return !exp.interpret(ctx);
+    }
+
+    @Override
+    public String toString() {
+        return "(Not " + exp.toString() + ")";
+    }
+
+}
+
+　　环境(Context)类定义出从变量到布尔值的一个映射
+
+public class Context {
+
+    private Map<Variable,Boolean> map = new HashMap<Variable,Boolean>();
+    
+    public void assign(Variable var , boolean value){
+        map.put(var, new Boolean(value));
+    }
+    
+    public boolean lookup(Variable var) throws IllegalArgumentException{
+        Boolean value = map.get(var);
+        if(value == null){
+            throw new IllegalArgumentException();
+        }
+        return value.booleanValue();
+    }
+}
+
+　　客户端类
+
+public class Client {
+
+    public static void main(String[] args) {
+        Context ctx = new Context();
+        Variable x = new Variable("x");
+        Variable y = new Variable("y");
+        Constant c = new Constant(true);
+        ctx.assign(x, false);
+        ctx.assign(y, true);
+        
+        Expression exp = new Or(new And(c,x) , new And(y,new Not(x)));
+        System.out.println("x=" + x.interpret(ctx));
+        System.out.println("y=" + y.interpret(ctx));
+        System.out.println(exp.toString() + "=" + exp.interpret(ctx));
+    }
+
+}
+
+
+===============================================================================外观模式=============================================================================================================
+
+一、概念介绍
+　　外观模式（Facade）,他隐藏了系统的复杂性，并向客户端提供了一个可以访问系统的接口。这种类型的设计模式属于结构性模式。为子系统中的一组接口提供了一个统一的访问接口，这个接口使得子系统更容易被访问或者使用。 
+
+二、角色及使用场景
+
+
+　　简单来说，该模式就是把一些复杂的流程封装成一个接口供给外部用户更简单的使用。这个模式中，设计到3个角色。
+
+　　1）.门面角色：外观模式的核心。它被客户角色调用，它熟悉子系统的功能。内部根据客户角色的需求预定了几种功能的组合。
+
+　　2）.子系统角色:实现了子系统的功能。它对客户角色和Facade时未知的。它内部可以有系统内的相互交互，也可以由供外界调用的接口。
+
+　　3）.客户角色:通过调用Facede来完成要实现的功能。
+
+
+
+子系统类：
+package com.huawei.facadeDesign.children;
+
+import org.apache.log4j.Logger;
+
+/**
+ * cpu子系统类
+ * @author Administrator
+ *
+ */
+public class CPU 
+{
+    public static final Logger LOGGER = Logger.getLogger(CPU.class);
+    public void start()
+    {
+        LOGGER.info("cpu is start...");
+    }
+    
+    public void shutDown()
+    {
+        LOGGER.info("CPU is shutDown...");
+    }
+}
+
+
+
+package com.huawei.facadeDesign.children;
+
+import org.apache.log4j.Logger;
+
+/**
+ * Disk子系统类
+ * @author Administrator
+ *
+ */
+public class Disk
+{
+    public static final Logger LOGGER = Logger.getLogger(Disk.class);
+    public void start()
+    {
+        LOGGER.info("Disk is start...");
+    }
+    
+    public void shutDown()
+    {
+        LOGGER.info("Disk is shutDown...");
+    }
+}
+
+
+package com.huawei.facadeDesign.children;
+
+import org.apache.log4j.Logger;
+
+/**
+ * Memory子系统类
+ * @author Administrator
+ *
+ */
+public class Memory
+{
+    public static final Logger LOGGER = Logger.getLogger(Memory.class);
+    public void start()
+    {
+        LOGGER.info("Memory is start...");
+    }
+    
+    public void shutDown()
+    {
+        LOGGER.info("Memory is shutDown...");
+    }
+}
+
+
+门面类Facade
+package com.huawei.facadeDesign.facade;
+
+import org.apache.log4j.Logger;
+
+import com.huawei.facadeDesign.children.CPU;
+import com.huawei.facadeDesign.children.Disk;
+import com.huawei.facadeDesign.children.Memory;
+
+
+/**
+ * 门面类（核心）
+ * @author Administrator
+ *
+ */
+public class Computer
+{
+    public static final Logger LOGGER = Logger.getLogger(Computer.class);
+    
+    private CPU cpu;
+    private Memory memory;
+    private Disk disk;
+    public Computer()
+    {
+        cpu = new CPU();
+        memory = new Memory();
+        disk = new Disk();
+    }
+    public void start()
+    {
+        LOGGER.info("Computer start begin");
+        cpu.start();
+        disk.start();
+        memory.start();
+        LOGGER.info("Computer start end");
+    }
+    
+    public void shutDown()
+    {
+        LOGGER.info("Computer shutDown begin");
+        cpu.shutDown();
+        disk.shutDown();
+        memory.shutDown();
+        LOGGER.info("Computer shutDown end...");
+    }
+}
+
+
+
+客户角色。
+
+package com.huawei.facadeDesign;
+
+import org.apache.log4j.Logger;
+
+import com.huawei.facadeDesign.facade.Computer;
+
+/**
+ * 客户端类
+ * @author Administrator
+ *
+ */
+public class Cilent {
+    public static final Logger LOGGER = Logger.getLogger(Cilent.class);
+    public static void main(String[] args) 
+    {
+        Computer computer = new Computer();
+        computer.start();
+        LOGGER.info("=================");
+        computer.shutDown();
+    }
+
+}
+
+
+
+===============================================================================命令模式=============================================================================================================
+
+命令模式很好理解，举个例子，司令员下令让士兵去干件事情，从整个事情的角度来考虑，司令员的作用是，发出口令，口令经过传递，传到了士兵耳朵里，士兵去执行。这个过程好在，三者相互解耦，任何一方都不用去依赖其他人，只需要做好自己的事儿就行，司令员要的是结果，不会去关注到底士兵是怎么实现的。我们看看关系图：
+public interface Command
+{
+    public void exe();
+}
+
+public class Invoker
+{
+    private Command command;
+
+    public Invoker(Command command)
+    {
+        this.command = command;
+    }
+
+    public void action()
+    {
+        command.exe();
+    }
+}
+
+public class MyCommand implements Command
+{
+    private Receiver receiver;
+
+    public MyCommand(Receiver receiver)
+    {
+        this.receiver = receiver;
+    }
+
+    @Override
+    public void exe()
+    {
+        receiver.action();
+
+    }
+
+}
+
+
+public class Receiver
+{
+    public void action()
+    {
+        System.out.println("command received!");
+    }
+}
+
+
+public class Test
+{
+    public static void main(String[] args)
+    {
+        Receiver receiver = new Receiver();
+
+        Command cmd = new MyCommand(receiver);
+
+        Invoker invoker = new Invoker(cmd);
+        invoker.action();
+
+    }
+}
+
+
+===============================================================================桥接模式=============================================================================================================
+
+桥接模式(Bridge Pattern)：将抽象部分与它的实现部分分离，使它们都可以独立地变化。它是一种对象结构型模式，又称为柄体(Handle and Body)模式或接口(Interface)模式。
+
+桥接口：Qiao
+
+ public interface Qiao {
+    //目的地B
+     void targetAreaB();
+}
+
+
+
+/**
+ * 目的地B1
+ */
+public class AreaB1 implements Qiao {
+
+    @Override
+    public void targetAreaB() {
+        System.out.println("我要去B1");
+    }
+
+}
+
+/**
+ * 目的地B2
+ */
+public class AreaB2 implements Qiao {
+
+    @Override
+    public void targetAreaB() {
+        System.out.println("我要去B2");
+    }
+
+}
+
+/**
+ * 目的地B3
+ */
+public class AreaB3 implements Qiao {
+
+    @Override
+    public void targetAreaB() {
+        System.out.println("我要去B3");
+    }
+
+}
+
+
+抽象来源地A：AreaA
+
+
+public abstract class AreaA {
+     //引用桥接口
+     Qiao qiao;
+     //来源地
+     abstract void fromAreaA();
+ }
+
+
+/**
+ * 来源地A1
+ */
+public class AreaA1 extends AreaA {
+
+    @Override
+    void fromAreaA() {
+        System.out.println("我来自A1");
+    }
+    
+}
+
+/**
+ * 来源地A2
+ */
+public class AreaA2 extends AreaA {
+
+    @Override
+    void fromAreaA() {
+        System.out.println("我来自A2");
+    }
+
+}
+
+/**
+ * 来源地A3
+ */
+public class AreaA3 extends AreaA {
+
+    @Override
+    void fromAreaA() {
+        System.out.println("我来自A3");
+    }
+
+}
+
+
+
+public class Clienter {
+    public static void main(String[] args) {
+        AreaA a = new AreaA2();
+        a.qiao = new AreaB3();
+        a.fromAreaA();
+        a.qiao.targetAreaB();
+    }
+}
+
+
+===============================================================================适配器模式============================================================================================================
+
+适配器就是一种适配中间件，它存在于不匹配的二者之间，用于连接二者，将不匹配变得匹配，简单点理解就是平常所见的转接头，转换器之类的存在。
+
+适配器模式有两种：类适配器、对象适配器、接口适配器
+前二者在实现上有些许区别，作用一样，第三个接口适配器差别较大。
+
+
+　详见下方实例：我们以ps2与usb的转接为例
+
+ps2接口：Ps2
+
+ public interface Ps2 {
+     void isPs2();
+ }
+USB接口：Usb
+
+ public interface Usb {
+     void isUsb();
+ }
+USB接口实现类：Usber
+
+ public class Usber implements Usb {
+ 
+     @Override
+    public void isUsb() {
+        System.out.println("USB口");
+     }
+ 
+ }
+适配器：Adapter
+
+public class Adapter extends Usber implements Ps2 {
+ 
+     @Override
+     public void isPs2() {
+         isUsb();
+     }
+ 
+ }
+
+测试方法：Clienter
+
+复制代码
+ public class Clienter {
+ 
+     public static void main(String[] args) {
+         Ps2 p = new Adapter();
+         p.isPs2();
+     }
+ 
+ }
+复制代码
+显示结果：
+
+USB口
+实例讲解：
+
+　　我手中有个ps2插头的设备，但是主机上只有usb插头的插口，怎么办呢？弄个转换器，将ps2插头转换成为USB插头就可以使用了。
+
+　　接口Ps2：描述ps2接口格式
+
+　　接口Usb：描述USB接口格式
+
+　　类Usber：是接口Usb的实现类，是具体的USB接口格式
+
+　　Adapter：用于将ps2接口格式转换成为USB接口格式
+
+2、对象适配器模式
+
+　　原理：通过组合来实现适配器功能。
+
+　　当我们要访问的接口A中没有我们想要的方法 ，却在另一个接口B中发现了合适的方法，我们又不能改变访问接口A，在这种情况下，我们可以定义一个适配器p来进行中转，这个适配器p要实现我们访问的接口A，这样我们就能继续访问当前接口A中的方法（虽然它目前不是我们的菜），然后在适配器P中定义私有变量C（对象）（B接口指向变量名），再定义一个带参数的构造器用来为对象C赋值，再在A接口的方法实现中使用对象C调用其来源于B接口的方法。
+
+　　详见下方实例：我们仍然以ps2与usb的转接为例
+
+ps2接口：Ps2
+
+ public interface Ps2 {
+     void isPs2();
+ }
+USB接口：Usb
+
+ public interface Usb {
+     void isUsb();
+ }
+USB接口实现类：Usber
+
+
+ public class Usber implements Usb {
+ 
+     @Override
+     public void isUsb() {
+        System.out.println("USB口");
+     }
+ 
+ }
+适配器：Adapter
+
+ public class Adapter implements Ps2 {
+     
+    private Usb usb;
+     public Adapter(Usb usb){
+         this.usb = usb;
+     }
+     @Override
+     public void isPs2() {
+         usb.isUsb();
+     }
+ 
+ }
+
+测试类：Clienter
+
+
+ public class Clienter {
+ 
+     public static void main(String[] args) {
+         Ps2 p = new Adapter(new Usber());
+         p.isPs2();
+     }
+ 
+ }
+复制代码
+结果显示：
+
+USB口
+实例讲解：
+
+　　我手中有个ps2插头的设备，但是主机上只有usb插头的插口，怎么办呢？弄个转换器，将ps2插头转换成为USB插头就可以使用了。
+
+　　接口Ps2：描述ps2接口格式
+
+　　接口Usb：描述USB接口格式
+
+　　类Usber：是接口Usb的实现类，是具体的USB接口格式
+
+　　Adapter：用于将ps2接口格式转换成为USB接口格式
+
+
+
+
+
+
+===============================================================================原型对象============================================================================================================
+
+1、由原型对象自身创建目标对象。也就是说，对象创建这一动作发自原型对象本身。
+
+2、目标对象是原型对象的一个克隆。也就是说，通过原型模式创建的对象，不仅仅与原型对象具有相同的结构，还与原型对象具有相同的值。
+
+3、根据对象克隆深度层次的不同，有浅度克隆与深度克隆。
+class Prototype implements Cloneable { 
+    public Prototype clone(){ 
+        Prototype prototype = null; 
+        try{ 
+            prototype = (Prototype)super.clone(); 
+        }catch(CloneNotSupportedException e){ 
+            e.printStackTrace(); 
+        } 
+        return prototype;  
+    } 
+} 
+ 
+class ConcretePrototype extends Prototype{ 
+    public void show(){ 
+        System.out.println("原型模式实现类"); 
+    } 
+} 
+ 
+public class Client { 
+    public static void main(String[] args){ 
+        ConcretePrototype cp = new ConcretePrototype(); 
+        for(int i=0; i< 10; i++){ 
+            ConcretePrototype clonecp = (ConcretePrototype)cp.clone(); 
+            clonecp.show(); 
+        } 
+    } 
+} 
+
+
+
+ 使用原型模式创建对象比直接new一个对象在性能上要好的多，因为Object类的clone方法是一个本地方法，它直接操作内存中的二进制流，特别是复制大对象时，性能的差别非常明显。
+
+       使用原型模式的另一个好处是简化对象的创建，使得创建对象就像我们在编辑文档时的复制粘贴一样简单。
+
+       因为以上优点，所以在需要重复地创建相似对象时可以考虑使用原型模式。比如需要在一个循环体内创建对象，假如对象创建过程比较复杂或者循环次数很多的话，使用原型模式不但可以简化创建过程，而且可以使系统的整体性能提高很多。
+
+
+
+
+===============================================================================责任链模式============================================================================================================
+
+
+责任链模式通俗来说就是关联一串能够处理事务的对象，使多个对象都有机会处理请求，从而避免了请求的发送者和接收者之间的耦合关系。将这些对象连成一条链，并沿着这条链传递该请求，直到有对象处理它为止。【view事件处理】【okhttp interceptors】
+【抽象处理者】Handler : 定义出一个处理请求的接口，抽象方法handleRequest()规范子类处理请求的操作。
+【具体处理者】ConcreteHandler : 具体处理者接到请求后，可以选择将请求处理掉，或者将请求传给下家。
+【客户端】Client : 设置不同的具体处理者的层级。
+
+public abstract class Handler {
+    private Handler successor;
+
+    public Handler getSuccessor() {
+        return successor;
+    }
+
+    public void setSuccessor(Handler successor) {
+        this.successor = successor;
+    }
+
+    abstract Response handlerRequest(String msgChain);
+}
+
+
+public class Response {
+    public Response(String msg, String dealMan) {
+        this.msg = msg;
+        this.dealMan = dealMan;
+    }
+    private String msg;
+    private String dealMan;
+    public String getMsg() {
+        return msg;
+    }
+    public String getDealMan() {
+        return dealMan;
+    }
+}
+
+   public class RubbishHandler extends Handler {
+
+    @Override
+    Response handlerRequest(String msgChain) {
+        if (msgChain.contains("安利") || msgChain.contains("健身吗靓仔") || msgChain.contains("信用卡办理")) {
+            return new Response("清空垃圾信息", "智能机器管家");
+        } else {
+            return getSuccessor().handlerRequest(msgChain);
+        }
+    }
+}
+
+
+public class TalentedHanlder extends Handler {
+
+    @Override
+    Response handlerRequest(String msgChain) {
+        if (msgChain.contains("张惠妹") || msgChain.contains("林夕") || msgChain.contains("张学友")) {
+            return new Response("执笔写歌词", "方文山");
+        } else {
+            return getSuccessor().handlerRequest(msgChain);
+        }
+    }
+}
+
+
+public class JayHanlder extends Handler {
+
+    @Override
+    Response handlerRequest(String msgChain) {
+        return new Response("媳妇，别闹", "周杰伦");
+    }
+}
+
+
+       Handler rubbishHandler = new RubbishHandler();//创建Handler实例
+        Handler negativeHanlder = new NegativeHanlder();
+        Handler talentedHanlder = new TalentedHanlder();
+        Handler jayHanlder = new JayHanlder();
+
+        rubbishHandler.setSuccessor(negativeHanlder);//然后关联层级
+        negativeHanlder.setSuccessor(talentedHanlder);
+        talentedHanlder.setSuccessor(jayHanlder);
+
+
+        Response response_new = rubbishHandler.handlerRequest("周杰伦先生你好，我是卓伟，我这边有一张侯佩琴的...");
+        System.out.println(response_new.getDealMan() + "【处理了该事件】" + response_new.getMsg());
+
+        Response response_new2 = rubbishHandler.handlerRequest("昆凌说老周啊，该生三胎了啊");
+        System.out.println(response_new2.getDealMan() + "【处理了该事件】" + response_new2.getMsg());
+
+
+
+
+
+
+===============================================================================中介者模式============================================================================================================
+
+ 用一个中介对象（中介者）来封装一系列的对象交互，中介者使各对象不需要显式地相互引用，从而使其耦合松散，而且可以独立地改变它们之间的交互。中介者模式又称为调停者模式，它是一种对象行为型模式。
+
+
+四、参与者
+
+1、Mediator（抽象中介者）：它定义一个接口，该接口用于与各同事对象之间进行通信。
+2、ConcreteMediator（具体中介者）：它是抽象中介者的子类，通过协调各个同事对象来实现协作行为，它维持了对各个同事对象的引用。
+3、Colleague（抽象同事类）：它定义各个同事类公有的方法，并声明了一些抽象方法来供子类实现，同时它维持了一个对抽象中介者类的引用，其子类可以通过该引用来与中介者通信。
+4、ConcreteColleague（具体同事类）：它是抽象同事类的子类；每一个同事对象在需要和其他同事对象通信时，先与中介者通信，通过中介者来间接完成与其他同事类的通信；在具体同事类中实现了在抽象同事类中声明的抽象方法。
+
+
+
+/**
+
+ * 抽象同事类：
+
+ * @author  lvzb.software@qq.com
+
+ *
+
+ */
+
+public abstract class Person {
+
+	// 维持一个抽象中介者的引用
+
+	protected Mediator mediator;
+
+	
+
+	protected String name;
+
+	
+
+	public Person(String name, Mediator mediator){
+
+		this.mediator = mediator;
+
+		this.name = name;
+
+	}
+
+	
+
+	/**
+
+	 * 设置中介者对象
+
+	 * @param mediator
+
+	 */
+
+	public void setMediator(Mediator mediator){
+
+		this.mediator = mediator;
+
+	}
+
+ 
+
+	/**
+
+	 * 向中介 发送消息
+
+	 */
+
+	protected abstract void sendMessage(String msg);
+
+	
+
+	/**
+
+	 * 从中介 获取消息
+
+	 */
+
+	protected abstract void getMessage(String msg);
+
+}
+2、房屋求租者 Renter.java 
+
+
+/**
+
+ * 具体同事类：这里的角色是 租房者
+
+ * @author  lvzb.software@qq.com
+
+ *
+
+ */
+
+public class Renter extends Person {
+
+ 
+
+	public Renter(String name, Mediator mediator) {
+
+		super(name, mediator);
+
+	}
+
+	
+
+ 
+
+	@Override
+
+	protected void sendMessage(String msg) {
+
+		mediator.operation(this, msg);
+
+	}
+
+ 
+
+	@Override
+
+	protected void getMessage(String msg) {
+
+		System.out.println("求租者[" + name + "]收到中介发来的消息： " + msg);
+
+	}
+
+ 
+
+}
+3、具体同事类 房屋出租者[房东] Landlord.java 
+
+
+/**
+
+ * 具体同事类：这里的角色是 房东
+
+ * @author  lvzb.software@qq.com
+
+ *
+
+ */
+
+public class Landlord extends Person {
+
+ 
+
+	public Landlord(String name, Mediator mediator) {
+
+		super(name,mediator);
+
+	}
+
+	
+
+	@Override
+
+	protected void sendMessage(String msg) {
+
+		mediator.operation(this, msg);
+
+	}
+
+ 
+
+	@Override
+
+	protected void getMessage(String msg) {
+
+		System.out.println("房东["+ name +"]收到中介发来的消息：" + msg);
+
+	}
+
+ 
+
+}
+4、抽象中介者类：Mediator.java 
+
+
+/**
+
+ * 抽象中介者类
+
+ * @author  lvzb.software@qq.com
+
+ *
+
+ */
+
+public abstract class Mediator {
+
+	// 用于添加储存 "房东"角色
+
+	protected List<Person> landlordList = new ArrayList<Person>();
+
+	
+
+	// 用于添加储存 "求租者"角色
+
+	protected List<Person> renterList = new ArrayList<Person>();
+
+	
+
+	/**
+
+	 * 中介者注册房东信息
+
+	 * @param landlord 房东实体
+
+	 */
+
+	public void registerLandlord(Person landlord){
+
+		landlordList.add(landlord);
+
+	}
+
+	
+
+	/**
+
+	 * 中介者注册 求租者信息
+
+	 * @param landlord 房东实体
+
+	 */
+
+	public void registerRenter(Person landlord){
+
+		renterList.add(landlord);
+
+	}
+
+	
+
+	
+
+	/**
+
+	 * 声明抽象方法 由具体中介者子类实现 消息的中转和协调
+
+	 */
+
+	public abstract void operation(Person person, String message);
+
+ 
+
+}
+5、具体中介者类：房屋中介 HouseMediator.java 
+
+
+/**
+
+ * 具体中介者类：这里的角色是 房屋出租中介
+
+ * @author  lvzb.software@qq.com
+
+ *
+
+ */
+
+public class HouseMediator extends Mediator {
+
+ 
+
+	@Override
+
+	public void operation(Person person, String message) {
+
+		if(person instanceof Renter){
+
+			// 将租屋的需求消息传递给 注册了的房东们
+
+			for(Person landlord: landlordList){
+
+				landlord.getMessage(message);
+
+			}
+
+		} else if(person instanceof Landlord){
+
+			// 将房东的出租房消息传递给 注册了的 房屋求租者们
+
+			for(Person renter : renterList){
+
+				renter.getMessage(message);
+
+			}
+
+		}
+
+		
+
+	}
+
+ 
+
+}
+6、客户端测试类 Client.java 
+
+
+/**
+
+ * 客户端测试类
+
+ * @author  lvzb.software@qq.com
+
+ *
+
+ */
+
+public class Client {
+
+ 
+
+	public static void main(String[] args) {
+
+		// 实例化房屋中介
+
+		Mediator mediator = new HouseMediator();
+
+		
+
+		Person landlordA, landlordB, renter;
+
+		landlordA = new Landlord("房东李", mediator);
+
+		landlordB = new Landlord("房东黎", mediator);
+
+				
+
+		renter = new Renter("小吕",mediator);
+
+		
+
+		// 房东注册中介
+
+		mediator.registerLandlord(landlordA);
+
+		mediator.registerLandlord(landlordB);
+
+		// 求租者注册中介
+
+		mediator.registerRenter(renter);
+
+		
+
+		// 求租者 发送求租消息
+
+		renter.sendMessage("在天河公园附近租套房子，价格1000元左右一个月");
+
+		System.out.println("--------------------------");
+
+		// 房东A 发送房屋出租消息
+
+		landlordA.sendMessage("天河公园学院站三巷27号四楼有一房一厅出租  1200/月  光线好 近公交站");
+
+	}
+
+ 
+
+}
+7、运行结果： 
+
+
+房东[房东李]收到中介发来的消息：在天河公园附近租套房子，价格1000元左右一个月
+
+房东[房东黎]收到中介发来的消息：在天河公园附近租套房子，价格1000元左右一个月
+
+--------------------------
+
+求租者[小吕]收到中介发来的消息： 天河公园学院站三巷27号四楼有一房一厅出租  1200/月  光线好 近公交站
+
+
+
+
+===============================================================================装饰者模式============================================================================================================
+
+
+package cn.yang.test.controller.DesignPattern;
+
+/**
+ * Created by Dev_yang on 2016/3/1.
+ */
+public class 装饰模式 {
+    public static void main(String[] args) {
+        ConcreteComponont concreteComponont = new ConcreteComponont();
+        ConcreteDecorator1 concreteDecorator1 = new ConcreteDecorator1(concreteComponont);
+        ConcreteDecorator2 concreteDecorator2 = new ConcreteDecorator2(concreteDecorator1);
+        concreteDecorator2.operate();
+    }
+}
+
+abstract class Componont{
+public abstract void operate();
+}
+
+class ConcreteComponont extends Componont{
+    @Override
+    public void operate() {
+        System.out.println("被装饰者最终被执行了！！");
+    }
+}
+
+abstract class Decorator extends Componont{
+    private Componont componont;
+
+
+    public Decorator(Componont componont) {
+        this.componont = componont;
+    }
+
+    @Override
+   final public void operate() {
+        decorateMethod();
+        componont.operate();
+
+    }
+
+    protected abstract void decorateMethod();
+}
+
+class ConcreteDecorator1 extends Decorator{
+    public ConcreteDecorator1(Componont componont) {
+        super(componont);
+    }
+    @Override
+    protected void decorateMethod() {
+        System.out.println("被ConcreteDecorator1装饰了");
+    }
+}
+
+class ConcreteDecorator2 extends Decorator{
+    public ConcreteDecorator2(Componont componont) {
+        super(componont);
+    }
+    @Override
+    protected void decorateMethod() {
+        System.out.println("被ConcreteDecorator2装饰了");
+    }
+}
+
+/**
+执行结果：
+被ConcreteDecorator2装饰了
+被ConcreteDecorator1装饰了
+被装饰者最终被执行了！！
+**/
+
+
+===============================================================================组合模式============================================================================================================
+
+
+组合模式，就是在一个对象中包含其他对象，这些被包含的对象可能是终点对象（不再包含别的对象），也有可能是非终点对象（其内部还包含其他对象，或叫组对象），我们将对象称为节点，即一个根节点包含许多子节点，这些子节点有的不再包含子节点，而有的仍然包含子节点，以此类推。很明显，这是树形结构，终结点叫叶子节点，非终节点（组节点）叫树枝节点，第一个节点叫根节点。同时也类似于文件目录的结构形式：文件可称之为终节点，目录可称之为非终节点（组节点）。
+https://www.cnblogs.com/V1haoge/p/6542449.html
+import java.util.ArrayList;
+import java.util.List;
+/**
+ * 目录节点
+ * 包含：
+ *         1、目录名
+ *         2、下级文件列表
+ *         3、下级目录列表
+ *         4、新增文件方法
+ *         5、新增目录方法
+ *         6、显示下级内容方法
+ */
+public class Noder {
+    String nodeName;//目录名
+    //通过构造器为目录命名
+    public Noder(String nodeName){
+        this.nodeName = nodeName;
+    }
+    List<Noder> nodeList = new ArrayList<Noder>();//目录的下级目录列表
+    List<Filer> fileList = new ArrayList<Filer>();//目录的下级文件列表
+    //新增下级目录
+    public void addNoder(Noder noder){
+        nodeList.add(noder);
+    }
+    //新增文件
+    public void addFiler(Filer filer){
+        fileList.add(filer);
+    }
+    //显示下级目录及文件
+    public void display(){
+        for(Noder noder:nodeList){
+            System.out.println(noder.nodeName);
+            noder.display();//递归显示目录列表
+        }
+        for(Filer filer:fileList){
+            filer.display();
+        }
+    }
+}
+
+
+/**
+ * 文件节点
+ * 文件节点是终节点，无下级节点
+ * 包含：
+ *         1、文件名
+ *         2、文件显示方法
+ */
+public class Filer {
+    String fileName;//文件名
+    public Filer(String fileName){
+        this.fileName = fileName;
+    }
+    //文件显示方法
+    public void display(){
+        System.out.println(fileName);
+    }
+}
+
+
+import java.io.File;
+
+public class Clienter {
+    public static void createTree(Noder node){
+        File file = new File(node.nodeName);
+        File[] f = file.listFiles();
+        for(File fi : f){
+            if(fi.isFile()){
+                Filer filer = new Filer(fi.getAbsolutePath());
+                node.addFiler(filer);
+            }
+            if(fi.isDirectory()){
+                Noder noder = new Noder(fi.getAbsolutePath());
+                node.addNoder(noder);
+                createTree(noder);//使用递归生成树结构
+            }
+        }
+    }
+    public static void main(String[] args) {
+        Noder noder = new Noder("E://ceshi");
+        createTree(noder);//创建目录树形结构
+        noder.display();//显示目录及文件
+    }
+}
+
+
+运行结果：
+E:\ceshi\目录1
+E:\ceshi\目录1\目录3
+E:\ceshi\目录1\文件2.txt
+E:\ceshi\目录2
+E:\ceshi\目录2\文件3.txt
+E:\ceshi\文件1.txt
+
+
+
+   设计模式的六大原则
+	总原则：开闭原则（Open Close Principle）
+	开闭原则就是说对扩展开放，对修改关闭。在程序需要进行拓展的时候，不能去修改原有的代码，而是要扩展原有代码，实现一个热插拔的效果。所以一句话概括就是：为了使程序的扩展性好，易于维护和升级。想要达到这样的效果，我们需要使用接口和抽象类等，后面的具体设计中我们会提到这点。
+	1、单一职责原则
+	不要存在多于一个导致类变更的原因，也就是说每个类应该实现单一的职责，如若不然，就应该把类拆分。
+	 
+	2、里氏替换原则（Liskov Substitution Principle）
+	里氏代换原则(Liskov Substitution Principle LSP)面向对象设计的基本原则之一。 里氏代换原则中说，任何基类可以出现的地方，子类一定可以出现。 LSP是继承复用的基石，只有当衍生类可以替换掉基类，软件单位的功能不受到影响时，基类才能真正被复用，而衍生类也能够在基类的基础上增加新的行为。里氏代换原则是对“开-闭”原则的补充。实现“开-闭”原则的关键步骤就是抽象化。而基类与子类的继承关系就是抽象化的具体实现，所以里氏代换原则是对实现抽象化的具体步骤的规范。—— From Baidu 百科
+	历史替换原则中，子类对父类的方法尽量不要重写和重载。因为父类代表了定义好的结构，通过这个规范的接口与外界交互，子类不应该随便破坏它。
+	 
+	3、依赖倒转原则（Dependence Inversion Principle）
+	这个是开闭原则的基础，具体内容：面向接口编程，依赖于抽象而不依赖于具体。写代码时用到具体类时，不与具体类交互，而与具体类的上层接口交互。
+	 
+	4、接口隔离原则（Interface Segregation Principle）
+	这个原则的意思是：每个接口中不存在子类用不到却必须实现的方法，如果不然，就要将接口拆分。使用多个隔离的接口，比使用单个接口（多个接口方法集合到一个的接口）要好。
+	 
+	5、迪米特法则（最少知道原则）（Demeter Principle）
+	就是说：一个类对自己依赖的类知道的越少越好。也就是说无论被依赖的类多么复杂，都应该将逻辑封装在方法的内部，通过public方法提供给外部。这样当被依赖的类变化时，才能最小的影响该类。
+	最少知道原则的另一个表达方式是：只与直接的朋友通信。类之间只要有耦合关系，就叫朋友关系。耦合分为依赖、关联、聚合、组合等。我们称出现为成员变量、方法参数、方法返回值中的类为直接朋友。局部变量、临时变量则不是直接的朋友。我们要求陌生的类不要作为局部变量出现在类中。
+	 
+	6、合成复用原则（Composite Reuse Principle）
+	原则是尽量首先使用合成/聚合的方式，而不是使用继承
+
